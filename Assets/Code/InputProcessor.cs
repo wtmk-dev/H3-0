@@ -21,14 +21,13 @@ public class InputProcessor : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI _Score;
 
-
     private Vector3 _180 = new Vector3(0, 180, 0);
     private Vector2 _Move;
-    private bool _JumpPressed, _IsGrounded, _HasDoubleJump;
-    private float _HangTime;
+    private bool _JumpPressed, _IsGrounded, _HasDoubleJump, _IsAttacking, _IsFalling;
+    private float _HangTime, _JumpPowerCurrent;
 
     private string _Horizontal, _Vertical;
-    private KeyCode _Jump, _Restart;
+    private KeyCode _Jump, _Restart, _Attack, _Fall;
 
     public bool _IsActive = false;
     private Vector3 _StartPos;
@@ -75,14 +74,16 @@ public class InputProcessor : MonoBehaviour
         {
             _Horizontal = "Horizontal";
             _Vertical = "Vertical";
-            _Jump = KeyCode.Space;
+            _Jump = KeyCode.W;
+            _Fall = KeyCode.S;
             _Restart = KeyCode.Escape;
         }
         else
         {
             _Horizontal = "Debug Horizontal";
             _Vertical = "Debug Vertical";
-            _Jump = KeyCode.Keypad0;
+            _Jump = KeyCode.UpArrow;
+            _Fall = KeyCode.DownArrow;
             _Restart = KeyCode.KeypadMinus;
         }
 
@@ -106,24 +107,28 @@ public class InputProcessor : MonoBehaviour
             transform.position = _StartPos;
         }
 
+        if (Input.GetKeyUp(_Jump))
+        {
+            _JumpPressed = false;
+        }
+
         _IsGrounded = Physics2D.OverlapCircle(_GroundCheck.position, _GroundCheckRadius, _GroundLayer);
 
         if(_IsGrounded)
         {
+            _Rig.constraints = RigidbodyConstraints2D.FreezeRotation;
+            _Rig.gravityScale = 3;
             _HasDoubleJump = false;
+            _IsFalling = false;
+            _HangTime = _HangTimeMax;
+            _JumpPowerCurrent = _JumpPower;
         }
 
         _Move = new Vector2(Input.GetAxisRaw(_Horizontal), Input.GetAxisRaw(_Vertical));
         
-        if(_IsGrounded && Input.GetKeyDown(_Jump))
+        if (_IsGrounded && Input.GetKeyDown(_Jump))
         {
             _JumpPressed = true;
-            _HangTime = _HangTimeMax;
-        }
-
-        if(Input.GetKeyUp(KeyCode.Space))
-        {
-            _JumpPressed = false;
         }
 
         if (!_HasDoubleJump && !_IsGrounded && Input.GetKeyDown(KeyCode.Space))
@@ -139,26 +144,57 @@ public class InputProcessor : MonoBehaviour
         {
             transform.eulerAngles = _180;
         }
+
+        if(Input.GetKeyDown(_Attack))
+        {
+
+        }
+
+        if(!_IsGrounded && Input.GetKeyDown(_Fall))
+        {
+            _Rig.gravityScale = 8;
+            _Rig.velocity = Vector2.zero;
+            _IsFalling = true;
+        }
     }
 
     private void FixedUpdate()
     {
-        _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
+        if (_IsFalling)
+        {
+            _IsFalling = false;
+            _Rig.constraints = RigidbodyConstraints2D.FreezePositionX;
+            _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, -Vector2.up.y * _JumpPowerCurrent*1.3f);
+        }
+        else
+        {
+            _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
+        }
 
-        if(_JumpPressed)
+        if (_JumpPressed)
         {
             if(_HangTime > 0)
             {
-                Debug.Log("jumping");
                 _HangTime -= Time.deltaTime;
-                _Rig.velocity += Vector2.up * _JumpPower;
+                //_JumpPowerCurrent -= Time.deltaTime;
+                _Rig.velocity = new Vector2(_Rig.velocity.x, Vector2.up.y * _JumpPowerCurrent);
             }
             else
             {
-                Debug.Log("Falling");
-                //_Rig.velocity = Vector2.zero;
                 _JumpPressed = false;
+                _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
             }
         }
+        else
+        {
+            _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
+        }
+
+        if(_IsAttacking)
+        {
+
+        }
+
+        
     }
 }

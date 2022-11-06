@@ -13,7 +13,7 @@ public class Main : MonoBehaviour
     private Canvas _Canvas;
 
     private bool _HasGameStart, _WillRespawn;
-    private List<InputProcessor> _Inputs = new List<InputProcessor>();
+    private List<PlayerController> _Inputs = new List<PlayerController>();
 
     private void Start()
     {
@@ -22,7 +22,7 @@ public class Main : MonoBehaviour
 
         for (int i = 0; i < _Players.Count; i++)
         {
-            _Inputs.Add(_Players[i].GetComponent<InputProcessor>());
+            _Inputs.Add(_Players[i].GetComponent<PlayerController>());
         }
 
         OnStartGame();
@@ -40,7 +40,7 @@ public class Main : MonoBehaviour
         }
     }
 
-    private void OnDead(InputProcessor player)
+    private void OnDead(PlayerController player)
     {
         for (int i = 0; i < _Inputs.Count; i++)
         {

@@ -47,16 +47,15 @@ public class ShotIndicator : MonoBehaviour
 
     public void Shoot()
     {
-        _CurrentShootingTime = 0.3f;
+        _CurrentShootingTime = 0.1f;
         _Shot.SetActive(true);
         _IsShooting = true;
     }
 
     public void Rotate(float value)
     {
-        _RotateVector.z = value;
+        _RotateVector.z = value * 1.9f;
 
-        
         if (transform.localRotation.z < _RotationMin && value < 0)
         {
             return;

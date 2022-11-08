@@ -178,7 +178,7 @@ public class PlayerController : MonoBehaviour
 
         if(!_IsGrounded && Input.GetKeyDown(_Attack))
         {
-            _Rig.gravityScale = 0.1f;
+            _Rig.gravityScale = 0.01f;
             _Rig.velocity = Vector2.zero;
             _Rig.constraints = RigidbodyConstraints2D.FreezePositionX;
             _IsAttacking = true;
@@ -203,7 +203,7 @@ public class PlayerController : MonoBehaviour
 
         if (_IsAttacking && _Energy > 0)
         {
-            _Energy -= 0.01f;
+            _Energy -= 0.001f;
             _ShotIndicator.Rotate(Input.GetAxisRaw(_Vertical));
         }
     }
@@ -214,7 +214,7 @@ public class PlayerController : MonoBehaviour
         {
             _IsFalling = false;
             _Rig.constraints = RigidbodyConstraints2D.FreezePositionX;
-            _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, -Vector2.up.y * _JumpPowerCurrent*1.3f);
+            _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, -Vector2.up.y * _JumpPowerCurrent * 1.3f);
         }
         else
         {

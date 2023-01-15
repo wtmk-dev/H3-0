@@ -22,16 +22,18 @@ public class PlayerController : MonoBehaviour
     private TextMeshProUGUI _Score;
     [SerializeField]
     private ShotIndicator _ShotIndicator;
+    [SerializeField]
+    private Animator _Animator;
 
     public float Energy => _Energy;
 
     private Vector3 _180 = new Vector3(0, 180, 0);
     private Vector2 _Move;
-    private bool _JumpPressed, _IsGrounded, _HasDoubleJump, _IsAttacking, _IsFalling;
+    private bool _JumpPressed, _IsGrounded, _HasDoubleJump, _IsAttacking, _IsFalling, _IsChargeing;
     private float _HangTime, _JumpPowerCurrent;
 
     private string _Horizontal, _Vertical;
-    private KeyCode _Jump, _Restart, _Attack, _Fall;
+    private KeyCode _Jump, _Restart, _Attack, _Fall, _Charge;
 
     public bool _IsActive = false;
     private Vector3 _StartPos;
@@ -97,7 +99,7 @@ public class PlayerController : MonoBehaviour
             _Horizontal = "Horizontal";
             _Vertical = "Vertical";
             _Jump = KeyCode.W;
-            _Fall = KeyCode.S;
+            _Charge = KeyCode.S;
             _Restart = KeyCode.Escape;
             _Attack = KeyCode.Space;
         }
@@ -106,7 +108,7 @@ public class PlayerController : MonoBehaviour
             _Horizontal = "Debug Horizontal";
             _Vertical = "Debug Vertical";
             _Jump = KeyCode.UpArrow;
-            _Fall = KeyCode.DownArrow;
+            _Charge = KeyCode.DownArrow;
             _Restart = KeyCode.KeypadMinus;
             _Attack = KeyCode.Keypad0;
         }
@@ -168,6 +170,15 @@ public class PlayerController : MonoBehaviour
 
         }
 
+        if(_Move.x == 0)
+        {
+            _Animator.SetBool("IsWalking", false);
+        }
+        else
+        {
+            _Animator.SetBool("IsWalking", true);
+        }
+
         if(_Move.x > 0)
         {
             transform.eulerAngles = Vector3.zero;
@@ -176,8 +187,22 @@ public class PlayerController : MonoBehaviour
             transform.eulerAngles = _180;
         }
 
+        if(_Rig.velocity.y > 0)
+        {
+            _Animator.SetBool("IsHovering", true);
+        }
+        else
+        {
+            _Animator.SetBool("IsHovering", false);
+        }
+
         if(!_IsGrounded && Input.GetKeyDown(_Attack))
         {
+            if (_IsChargeing)
+            {
+                return;
+            }
+
             _Rig.gravityScale = 0.01f;
             _Rig.velocity = Vector2.zero;
             _Rig.constraints = RigidbodyConstraints2D.FreezePositionX;
@@ -187,6 +212,11 @@ public class PlayerController : MonoBehaviour
 
         if(_IsAttacking && Input.GetKeyUp(_Attack) || _IsAttacking && _Energy < 0)
         {
+            if(_IsChargeing)
+            {
+                return;
+            }
+
             _IsAttacking = false;
             _Rig.gravityScale = 10;
             _Rig.constraints = RigidbodyConstraints2D.FreezeRotation;
@@ -206,6 +236,22 @@ public class PlayerController : MonoBehaviour
             _Energy -= 0.001f;
             _ShotIndicator.Rotate(Input.GetAxisRaw(_Vertical));
         }
+
+        if (!_JumpPressed && !_IsAttacking && Input.GetKeyDown(_Charge))
+        {
+            _IsChargeing = true;
+            _Rig.gravityScale = 0;
+            _Rig.velocity = Vector2.zero;
+            _Animator.SetBool("IsCharging", _IsChargeing);
+        }
+
+        if(Input.GetKeyUp(_Charge) && _IsChargeing)
+        {
+            _IsChargeing = false;
+            _Rig.gravityScale = 3;
+            _Animator.SetBool("IsCharging", _IsChargeing);
+        }
+        
     }
 
     private void FixedUpdate()
@@ -218,11 +264,29 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
+            if(_IsChargeing)
+            {
+                return;
+            }
+
             _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
+        }
+
+        if (_IsChargeing)
+        {
+            _JumpPressed = false;
+            return;
+        }
+
+        if(_IsAttacking)
+        {
+            _JumpPressed = false;
+            return;
         }
 
         if (_JumpPressed)
         {
+            
             if(_HangTime > 0)
             {
                 _HangTime -= Time.deltaTime;

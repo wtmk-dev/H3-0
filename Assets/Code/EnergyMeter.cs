@@ -14,10 +14,12 @@ public class EnergyMeter : MonoBehaviour
 
     public void Update()
     {
+        /*
         if(_CurrentEnegy != _Player.Energy)
         {
             _CurrentEnegy = _Player.Energy;
             _Energy.SetText($"Energy: {_Player.Energy.ToString("P")}");
         }
+        */
     }
 }

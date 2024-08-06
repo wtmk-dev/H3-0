@@ -17,19 +17,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private LayerMask _GroundLayer;
     [SerializeField]
-    private int _Player;
-    [SerializeField]
-    private TextMeshProUGUI _Score;
-    [SerializeField]
-    private ShotIndicator _ShotIndicator;
-    [SerializeField]
     private Animator _Animator;
 
     public float Energy => _Energy;
 
     private Vector3 _180 = new Vector3(0, 180, 0);
     private Vector2 _Move;
-    private bool _JumpPressed, _IsGrounded, _HasDoubleJump, _IsAttacking, _IsFalling, _IsChargeing;
+    private bool _JumpPressed, _IsGrounded, _IsAttacking, _IsFalling, _IsChargeing;
     private float _HangTime, _JumpPowerCurrent;
 
     private string _Horizontal, _Vertical;
@@ -82,14 +76,12 @@ public class PlayerController : MonoBehaviour
             transform.position = _StartPos;
             gameObject.SetActive(true);
             _IsActive = true;
-            _Score.SetText($"");
         }
     }
 
     public void AddKill()
     {
         _Kills++;
-        _Score.SetText($"Kills {_Kills}");
     }
 
     public void Init(int player)
@@ -118,7 +110,8 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
-        Init(_Player);
+        Init(0);
+        _IsActive = true;
     }
 
     private void Update()
@@ -144,7 +137,6 @@ public class PlayerController : MonoBehaviour
         {
             _Rig.constraints = RigidbodyConstraints2D.FreezeRotation;
             _Rig.gravityScale = 3;
-            _HasDoubleJump = false;
             _IsFalling = false;
             _HangTime = _HangTimeMax;
             _JumpPowerCurrent = _JumpPower;
@@ -165,35 +157,12 @@ public class PlayerController : MonoBehaviour
             _JumpPressed = true;
         }
 
-        if (!_HasDoubleJump && !_IsGrounded && Input.GetKeyDown(KeyCode.Space))
-        {
-
-        }
-
-        if(_Move.x == 0)
-        {
-            _Animator.SetBool("IsWalking", false);
-        }
-        else
-        {
-            _Animator.SetBool("IsWalking", true);
-        }
-
         if(_Move.x > 0)
         {
             transform.eulerAngles = Vector3.zero;
         }else if(_Move.x < 0)
         {
             transform.eulerAngles = _180;
-        }
-
-        if(_Rig.velocity.y > 0)
-        {
-            _Animator.SetBool("IsHovering", true);
-        }
-        else
-        {
-            _Animator.SetBool("IsHovering", false);
         }
 
         if(!_IsGrounded && Input.GetKeyDown(_Attack))
@@ -207,7 +176,6 @@ public class PlayerController : MonoBehaviour
             _Rig.velocity = Vector2.zero;
             _Rig.constraints = RigidbodyConstraints2D.FreezePositionX;
             _IsAttacking = true;
-            _ShotIndicator.SetActive(true);
         }
 
         if(_IsAttacking && Input.GetKeyUp(_Attack) || _IsAttacking && _Energy < 0)
@@ -220,8 +188,6 @@ public class PlayerController : MonoBehaviour
             _IsAttacking = false;
             _Rig.gravityScale = 10;
             _Rig.constraints = RigidbodyConstraints2D.FreezeRotation;
-            _ShotIndicator.SetActive(false);
-            _ShotIndicator.Shoot();
         }
 
         if(!_IsAttacking && !_IsGrounded && Input.GetKeyDown(_Fall))
@@ -234,7 +200,6 @@ public class PlayerController : MonoBehaviour
         if (_IsAttacking && _Energy > 0)
         {
             _Energy -= 0.001f;
-            _ShotIndicator.Rotate(Input.GetAxisRaw(_Vertical));
         }
 
         if (!_JumpPressed && !_IsAttacking && Input.GetKeyDown(_Charge))

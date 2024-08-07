@@ -23,7 +23,7 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 _180 = new Vector3(0, 180, 0);
     private Vector2 _Move;
-    private bool _JumpPressed, _IsGrounded, _IsAttacking, _IsFalling, _IsChargeing;
+    private bool _JumpPressed, _IsGrounded, _IsAttacking;
     private float _HangTime, _JumpPowerCurrent;
 
     private string _Horizontal, _Vertical;
@@ -137,9 +137,6 @@ public class PlayerController : MonoBehaviour
         {
             _Rig.constraints = RigidbodyConstraints2D.FreezeRotation;
             _Rig.gravityScale = 3;
-            _IsFalling = false;
-            _HangTime = _HangTimeMax;
-            _JumpPowerCurrent = _JumpPower;
         }
 
         if(!_IsGrounded && !_IsAttacking)
@@ -150,7 +147,28 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        _Move = new Vector2(Input.GetAxisRaw(_Horizontal), Input.GetAxisRaw(_Vertical));
+        var x = Input.GetAxisRaw(_Horizontal);
+        var y = Input.GetAxisRaw(_Vertical);
+
+        if (x != 0)
+        {
+            _Animator.SetBool("Run", true);
+        }
+        else
+        {
+            _Animator.SetBool("Run", false);
+        }
+
+        if(y != 0)
+        {
+            _Animator.SetBool("Jump", true);
+        }
+        else
+        {
+            _Animator.SetBool("Jump", false);
+        }
+
+        _Move = new Vector2(x, y);
         
         if (_IsGrounded && Input.GetKeyDown(_Jump))
         {
@@ -165,102 +183,25 @@ public class PlayerController : MonoBehaviour
             transform.eulerAngles = _180;
         }
 
-        if(!_IsGrounded && Input.GetKeyDown(_Attack))
-        {
-            if (_IsChargeing)
-            {
-                return;
-            }
-
-            _Rig.gravityScale = 0.01f;
-            _Rig.velocity = Vector2.zero;
-            _Rig.constraints = RigidbodyConstraints2D.FreezePositionX;
-            _IsAttacking = true;
-        }
-
-        if(_IsAttacking && Input.GetKeyUp(_Attack) || _IsAttacking && _Energy < 0)
-        {
-            if(_IsChargeing)
-            {
-                return;
-            }
-
-            _IsAttacking = false;
-            _Rig.gravityScale = 10;
-            _Rig.constraints = RigidbodyConstraints2D.FreezeRotation;
-        }
-
-        if(!_IsAttacking && !_IsGrounded && Input.GetKeyDown(_Fall))
-        {
-            _Rig.gravityScale = 8;
-            _Rig.velocity = Vector2.zero;
-            _IsFalling = true;
-        }
-
-        if (_IsAttacking && _Energy > 0)
-        {
-            _Energy -= 0.001f;
-        }
-
-        if (!_JumpPressed && !_IsAttacking && Input.GetKeyDown(_Charge))
-        {
-            _IsChargeing = true;
-            _Rig.gravityScale = 0;
-            _Rig.velocity = Vector2.zero;
-            _Animator.SetBool("IsCharging", _IsChargeing);
-        }
-
-        if(Input.GetKeyUp(_Charge) && _IsChargeing)
-        {
-            _IsChargeing = false;
-            _Rig.gravityScale = 3;
-            _Animator.SetBool("IsCharging", _IsChargeing);
-        }
-        
     }
 
     private void FixedUpdate()
     {
-        if (_IsFalling)
-        {
-            _IsFalling = false;
-            _Rig.constraints = RigidbodyConstraints2D.FreezePositionX;
-            _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, -Vector2.up.y * _JumpPowerCurrent * 1.3f);
-        }
-        else
-        {
-            if(_IsChargeing)
-            {
-                return;
-            }
-
-            _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
-        }
-
-        if (_IsChargeing)
-        {
-            _JumpPressed = false;
-            return;
-        }
-
-        if(_IsAttacking)
-        {
-            _JumpPressed = false;
-            return;
-        }
+        _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
 
         if (_JumpPressed)
         {
-            
-            if(_HangTime > 0)
+            _Rig.velocity = new Vector2(_Rig.velocity.x, Vector2.up.y * _JumpPower);
+
+            if (_HangTime <= _HangTimeMax)
             {
-                _HangTime -= Time.deltaTime;
-                _Rig.velocity = new Vector2(_Rig.velocity.x, Vector2.up.y * _JumpPowerCurrent);
+                _HangTime += Time.deltaTime;
             }
             else
             {
+                _HangTime = 0f;
                 _JumpPressed = false;
-                _Rig.velocity = new Vector2(_Move.x * _Speed * Time.deltaTime, _Rig.velocity.y);
+                _Animator.SetBool("Jump", false);
             }
         }
         else
